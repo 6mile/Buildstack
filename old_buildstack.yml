@@ -1,0 +1,43 @@
+- hosts: 127.0.0.1
+  user: buildstack
+  sudo: yes
+  tasks:
+
+    - name: Installs EPEL RHEL6 repo
+      yum: name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm state=present
+
+    - name: enable the epel-testing repo
+      replace: dest=/etc/yum.repos.d/epel-testing.repo regexp='enabled=0' replace='enabled=1' backup=yes
+
+    - name: clean yum
+      action: command yum clean all
+
+    - name: install python-pip
+      action: yum pkg=python-pip state=installed
+
+    - name: install git
+      action: yum pkg=git state=installed
+
+    - name: Installs latest Docker package
+      yum: name=docker-io state=latest
+
+    - name: enable the docker daemon
+      action: service name=docker state=started enabled=yes
+
+    - name: append insecure registry stuff to sysconfig file
+      lineinfile: dest=/etc/sysconfig/docker line="other_args=\"--insecure-registry=localhost:20100\""
+
+    - name: restart docker
+      service: name=docker state=restarted
+
+    - name: Install haproxy 
+      action: yum pkg=haproxy state=latest
+      when: ansible_distribution == 'CentOS'
+
+#   - name: Install Vagrant
+#     yum: name=https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm state=present
+
+    - name: Install Redis for client connectivity
+      action: yum pkg=redis state=installed
+
+

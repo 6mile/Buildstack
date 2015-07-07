@@ -1,0 +1,16 @@
+---
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  tasks:
+  - name: Create security group
+
+    - ec2:
+      key_name: mykey
+      instance_type: t2.micro
+      image: ami-3f0fc054
+      wait: yes
+#     group: webserver
+      count: 1
+#     vpc_subnet_id: subnet-29e63245
+      assign_public_ip: yes

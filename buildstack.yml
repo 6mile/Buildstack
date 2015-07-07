@@ -1,0 +1,40 @@
+- hosts: 127.0.0.1
+  user: buildstack
+  sudo: yes
+  tasks:
+
+  - name: clean yum
+    action: command yum clean all
+
+  - name: Installs EPEL RHEL6 repo
+    yum: name=http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm state=present
+    when: ansible_distribution == 'CentOS'
+
+  - action: yum pkg={{item}} state=latest
+    with_items:
+     - python-pip
+     - docker-io
+     - git
+     - redis
+     - haproxy
+     - noip
+    when: ansible_distribution == 'CentOS'
+
+  - name: enable the epel-testing repo
+    replace: dest=/etc/yum.repos.d/epel-testing.repo regexp='enabled=0' replace='enabled=1' backup=yes
+    when: ansible_distribution == 'CentOS'
+
+  - name: enable the docker daemon
+    action: service name=docker state=started enabled=yes
+    when: ansible_distribution == 'CentOS'
+
+  - name: append insecure registry stuff to sysconfig file
+    lineinfile: dest=/etc/sysconfig/docker line="other_args=\"--insecure-registry=localhost:20100\""
+    when: ansible_distribution == 'CentOS'
+
+  - name: restart docker
+    service: name=docker state=restarted
+    when: ansible_distribution == 'CentOS'
+
+  - name: enable the noip daemon
+    action: service name=noip state=started enabled=yes

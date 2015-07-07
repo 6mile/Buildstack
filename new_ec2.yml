@@ -3,6 +3,9 @@
   connection: local
   user: buildstack
   gather_facts: False
+  vars:
+    AWS_ACCESS_KEY_ID: 'AKIAJZO6NIJRXORK4O4Q'
+    AWS_SECRET_ACCESS_KEY: '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'
   tasks:
   - name: create an EC2 instance
     local_action:

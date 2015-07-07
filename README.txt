@@ -11,6 +11,7 @@ redis 2.4.10
 noip 2.1.9
 git 1.7.1
 
-After you launch a new Buildstack instance you need to run "/usr/sbin/noip2 -C" and follow the prompts. 
+After you launch a new Buildstack instance you need to run "/usr/sbin/noip2 -C" and follow the prompts.  Additionally, you will have to enable Password Authentication to yes and restart the sshd daemon.
+
 
 

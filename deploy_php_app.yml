@@ -1,0 +1,60 @@
+---
+
+# PHP application deployment playbook by Paul McCarty.
+# appenv = INT,DEV,PROD
+
+- hosts: 127.0.0.1
+
+  #user: deployment
+  #become: deployment
+  #sudo: True
+  become_user: deployment
+  gather_facts: no
+  vars:
+    deployhome: /opt/deployment
+    apphome: "{{ deployhome }}/apps/{{ application }}"
+    repoadd: docker-registry.buildstack.io:5000
+  tasks:
+  - name: get time for timestamp
+    command: date +%Y%m%d%H%M%S%N
+    register: timestamp
+
+  - name: tar existing application directory
+    command: tar -zcvf {{ deployhome }}/oldbuilds/{{ timestamp.stdout }}.{{ application }}.tgz {{ apphome }}/code
+    ignore_errors: yes
+
+  - name: remove existing application directory
+    file: path={{ apphome }}/code state=absent
+
+  - name: clone git repo for application
+    command: git clone git@bitbucket.org:{{ bbname }}/{{ application }}.git {{ apphome }}/code/ creates={{ apphome }}/code/
+
+  - name: run composer
+    command: /usr/local/bin/composer update -d {{ apphome }}/code/
+
+  - name: remove any existing config.yml propel.yml file in .../code
+    file: path={{ apphome }}/code/{{ item }} state=absent
+    with_items:
+      - config.yml
+      - propel.yml
+
+  - name: copy yaml files to .../code
+    copy: src={{ apphome }}/{{ item }} dest={{ apphome }}/code
+    with_items:
+      - config.yml
+      - propel.yml
+
+  - name: add database for current env to config.yml
+    lineinfile: dest={{ apphome }}/code
+                state=present
+                regex='^\s*host:'
+                line='  host: "{{ host }}"'
+
+  - name: build docker image
+    command: docker build -t {{ repoadd }}/{{ application }}:{{ appenv }}_{{ timestamp.stdout }} {{ apphome }}
+    become: true
+    register: dockerimg
+
+  - name: push image to registry
+    command: docker push {{ repoadd }}/{{ application }}:{{ appenv }}_{{ timestamp.stdout }}
+    become: true
